@@ -525,6 +525,42 @@ void ReadOldSpecjudgeResult(const fs::path& output_path, bool last_stage, Submis
   }
 }
 
+void ReadZJSpecjudgeResult(const fs::path& output_path, SubmissionResult::TestdataResult& td_result) {
+  nlohmann::json json;
+  {
+    std::ifstream fin(output_path);
+    std::string line;
+    while(std::getline(fin, line)) {
+      if(line.find('=') == std::string::npos) /* skip the line without key=value*/ 
+        continue;
+
+      size_t pos = line.find('=');
+      std::string key = line.substr(0, pos);
+      std::string value = line.substr(pos + 1);
+      json[key] = value;
+    }
+  }
+ if( json["$JUDGE_RESULT"] == "AC" ) {
+   td_result.verdict = Verdict::AC;
+   td_result.score = 100'000'000;
+ } else {
+   td_result.verdict = Verdict::WA;
+ }
+ std::string msg="";
+ bool has_message = false;
+ for( auto it = json.begin(); it != json.end(); it++ ) {
+   if( it.key() == "$JUDGE_RESULT" ) continue;
+   has_message = true;
+    msg += it.key() + "=" + it.value().get<std::string>() + "\n";
+ }
+ if(!has_message) {
+   td_result.message_type = td_result.message = "";
+ } else {
+   td_result.message_type = "text";
+   td_result.message = msg;
+ }
+}
+
 void ReadNewSpecjudgeResult(const fs::path& output_path, SubmissionResult::TestdataResult& td_result) {
   nlohmann::json json;
   {
@@ -594,6 +630,8 @@ void FinalizeScoring(SubmissionAndResult& sub_and_result, const TaskEntry& task,
     if (td_result.verdict == Verdict::NUL) td_result.verdict = Verdict::WA;
   } else if (sub.specjudge_type == SpecjudgeType::SPECJUDGE_OLD) {
     ReadOldSpecjudgeResult(output_path, last_stage, td_result);
+  } else if( sub.specjudge_type == SpecjudgeType::SPECJUDGE_ZJ) {
+    ReadZJSpecjudgeResult(output_path, td_result);
   } else {
     try {
       ReadNewSpecjudgeResult(output_path, td_result);
@@ -932,7 +970,9 @@ bool PushSubmission(Submission&& sub, size_t max_queue) {
     InsertTaskList(std::move(compile));
   }
   if (sub.specjudge_type == SpecjudgeType::SPECJUDGE_OLD ||
-      sub.specjudge_type == SpecjudgeType::SPECJUDGE_NEW) {
+      sub.specjudge_type == SpecjudgeType::SPECJUDGE_NEW ||
+      sub.specjudge_type == SpecjudgeType::SPECJUDGE_ZJ  || 
+      sub.specjudge_type == SpecjudgeType::SPECJUDGE_POLYGON) {
     TaskEntry compile(id, {TaskType::COMPILE, (int)CompileSubtask::SPECJUDGE}, priority);
     for (auto& i : scorings) Link(compile, i[0]);
     if (executes.empty()) Link(compile, summary);

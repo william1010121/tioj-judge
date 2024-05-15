@@ -20,6 +20,8 @@ extern double kTimeMultiplier;
   X(NORMAL) \
   X(SPECJUDGE_OLD) \
   X(SPECJUDGE_NEW) \
+  X(SPECJUDGE_ZJ) \
+  X(SPECJUDGE_POLYGON) \
   X(SKIP) // should be the last one
 enum class SpecjudgeType {
 #define X(name) name,

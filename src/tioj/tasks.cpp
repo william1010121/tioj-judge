@@ -244,6 +244,12 @@ struct cjail_result RunScoring(const SubmissionAndResult& sub_and_result, const 
       ScoringBoxUserCode(-1, -1, -1, sub.lang, true),
       std::to_string(stage),
     });
+  }  else if (sub.specjudge_type == SpecjudgeType::SPECJUDGE_ZJ) {
+    opt.command.insert(opt.command.end(), {
+      ScoringBoxTdInput(-1, -1, -1, true),
+      ScoringBoxTdOutput(-1, -1, -1, true),
+      ScoringBoxUserOutput(-1, -1, -1, true),
+    });
   } else {
     opt.command.push_back(ScoringBoxMetaFile(-1, -1, -1, true));
     if (sub.specjudge_type == SpecjudgeType::NORMAL) {

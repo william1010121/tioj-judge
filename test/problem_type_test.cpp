@@ -302,3 +302,34 @@ int main(){})", SpecjudgeType::NORMAL, "", SummaryType::CUSTOM, R"(#include <cst
 int main(){ puts("{\"verdict\":\"AC\",\"score\":\"23\",\"total_time_us\":123456,\"ce_message\":\"meow\"}"); })");
   RunAndTeardownSubmission(id);
 }
+
+TEST_F(ExampleProblem, SpecjudgeZJProblemOneSubmission) {
+  SetUp(7, 3, 2);
+  AssertVerdictReporter reporter(Verdict::AC);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio> 
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_ZJ, R"(#include <cstdio> 
+      int main(){puts("$JUDGE_RESULT=AC");})");
+    RunAndTeardownSubmission(id);
+}
+
+TEST_F(ExampleProblem, SpecjudgeZJProblemOneSubmission_WA) {
+  SetUp(7, 3, 2);
+  AssertVerdictReporter reporter(Verdict::WA);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  auto orig_score = sub.reporter.ReportScoringResult;
+  sub.reporter.ReportScoringResult = [&](auto& sub, auto& res, int subtask, int stage){
+    orig_score(sub, res, subtask, stage);
+    ASSERT_EQ(res.td_results[subtask].message, "$MESSAGE=hello\n$YAAA=K\n");
+  };
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio> 
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_ZJ, R"(#include <cstdio> 
+      int main(){puts("$JUDGE_RESULT=WA\n$MESSAGE=hello\n$YAAA=K\n");})");
+    RunAndTeardownSubmission(id);
+}
+
+
