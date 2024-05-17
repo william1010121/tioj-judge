@@ -244,22 +244,29 @@ struct cjail_result RunScoring(const SubmissionAndResult& sub_and_result, const 
       ScoringBoxUserCode(-1, -1, -1, sub.lang, true),
       std::to_string(stage),
     });
-  }  else if (sub.specjudge_type == SpecjudgeType::SPECJUDGE_ZJ) {
+  } else if (sub.specjudge_type == SpecjudgeType::SPECJUDGE_ZJ) {
     opt.command.insert(opt.command.end(), {
       ScoringBoxTdInput(-1, -1, -1, true),
       ScoringBoxTdOutput(-1, -1, -1, true),
       ScoringBoxUserOutput(-1, -1, -1, true),
+    });
+  } else if(sub.specjudge_type == SpecjudgeType::SPECJUDGE_POLYGON) {
+    opt.command.insert(opt.command.end(),{
+      ScoringBoxTdInput(-1, -1, -1, true), 
+      ScoringBoxUserOutput(-1, -1, -1, true),
+      ScoringBoxTdOutput(-1, -1, -1, true),
     });
   } else {
     opt.command.push_back(ScoringBoxMetaFile(-1, -1, -1, true));
     if (sub.specjudge_type == SpecjudgeType::NORMAL) {
       opt.command.insert(opt.command.end(), sub.default_scoring_args.begin(), sub.default_scoring_args.end());
     }
-  }
+  } 
+
   opt.workdir = Workdir("/");
   opt.input = "/dev/null";
   opt.output = ScoringBoxOutput(-1, -1, -1, true);
-  opt.error = "/dev/null";
+  opt.error = ScoringBoxError(-1, -1, -1, true);
   if (cpuid != -1) opt.cpu_set.push_back(cpuid);
   opt.uid = opt.gid = uid;
   opt.wall_time = 60L * 1'000'000;

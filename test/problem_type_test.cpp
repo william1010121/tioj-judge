@@ -332,4 +332,120 @@ TEST_F(ExampleProblem, SpecjudgeZJProblemOneSubmission_WA) {
     RunAndTeardownSubmission(id);
 }
 
+TEST_F(ExampleProblem, SpecjudgePolygonProblemOneSubmission_AC) {
+  SetUp(8, 3, 2);
+  AssertVerdictReporter reporter(Verdict::AC);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio>
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_POLYGON, R"(#include <cstdio>
+      #include "testlib.h"
+      int main(int argc, char**argv){ registerTestlibCmd(argc, argv); puts("bcad"); quitf(_ok, "YOU good");})");
+    RunAndTeardownSubmission(id);
+}
 
+TEST_F(ExampleProblem, SpecjudgePolygonProblemOneSubmission_WA) {
+  SetUp(8, 3, 2);
+  AssertVerdictReporter reporter(Verdict::WA);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  auto orig_score = sub.reporter.ReportScoringResult;
+  sub.reporter.ReportScoringResult = [&](auto& sub, auto& res, int subtask,int stage){
+    orig_score(sub, res, subtask, stage);
+  };
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio>
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_POLYGON, R"(#include <cstdio>
+      #include "testlib.h"
+      int main(int argc, char**argv){ registerTestlibCmd(argc, argv); puts("bcad"); quitf(_wa, "YOU good");})");
+    RunAndTeardownSubmission(id);
+}
+
+TEST_F(ExampleProblem, SpecjudgePolygonProblemOneSubmission_PE) {
+  // PE stands for Presentation Error, will be WA and provide additional message
+  SetUp(8, 3, 2);
+  AssertVerdictReporter reporter(Verdict::WA);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  auto orig_score = sub.reporter.ReportScoringResult;
+  sub.reporter.ReportScoringResult = [&](auto& sub, auto& res, int subtask,int stage){
+    orig_score(sub, res, subtask, stage);
+  };
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio>
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_POLYGON, R"(#include <cstdio>
+      #include "testlib.h"
+      int main(int argc, char**argv){ registerTestlibCmd(argc, argv); puts("bcad"); quitf(_pe, "YOU good");})");
+    RunAndTeardownSubmission(id);
+}
+TEST_F(ExampleProblem, SpecjudgePolygonProblemOneSubmission_FAIL) {
+  // FAIL stands for Failed, will be JE and provide additional message
+  SetUp(8, 3, 2);
+  AssertVerdictReporter reporter(Verdict::WA);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  auto orig_score = sub.reporter.ReportScoringResult;
+  sub.reporter.ReportScoringResult = [&](auto& sub, auto& res, int subtask,int stage){
+    orig_score(sub, res, subtask, stage);
+  };
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio>
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_POLYGON, R"(#include <cstdio>
+      #include "testlib.h"
+      int main(int argc, char**argv){ registerTestlibCmd(argc, argv); puts("bcad"); quitf(_fail, "YOU good");})");
+    RunAndTeardownSubmission(id);
+}
+TEST_F(ExampleProblem, SpecjudgePolygonProblemOneSubmission_DIRT) {
+  // DIRT stands for Dirty, will be WA and provide additional message
+  SetUp(8, 3, 2);
+  AssertVerdictReporter reporter(Verdict::WA);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  auto orig_score = sub.reporter.ReportScoringResult;
+  sub.reporter.ReportScoringResult = [&](auto& sub, auto& res, int subtask,int stage){
+    orig_score(sub, res, subtask, stage);
+  };
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio>
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_POLYGON, R"(#include <cstdio>
+      #include "testlib.h"
+      int main(int argc, char**argv){ registerTestlibCmd(argc, argv); puts("bcad"); quitf(_dirt, "YOU good");})");
+    RunAndTeardownSubmission(id);
+}
+TEST_F(ExampleProblem,SpecjudgePolygonProblemOneSubmission_POINTS) {
+  // POINTS stands for Points, will be WA and provide additional message, also provide score
+  SetUp(8, 3, 2);
+  AssertVerdictReporter reporter(Verdict::WA);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  auto orig_score = sub.reporter.ReportScoringResult;
+  sub.reporter.ReportScoringResult = [&](auto& sub, auto& res, int subtask,int stage){
+    orig_score(sub, res, subtask, stage);
+    ASSERT_EQ(res.td_results[subtask].score, 1'234'567);
+  };
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio>
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_POLYGON, R"(#include <cstdio>
+      #include "testlib.h"
+      int main(int argc, char**argv){ registerTestlibCmd(argc, argv); puts("bcad"); quitp(1.234567, "YOU good");})");
+    RunAndTeardownSubmission(id);
+}
+TEST_F(ExampleProblem,SpecjudgePolygonProblemOneSubmission_PC) {
+  // POINTS stands for Points, will be WA and provide additional message, also provide score
+  SetUp(8, 3, 2);
+  AssertVerdictReporter reporter(Verdict::WA);
+  sub.reporter = reporter.GetReporter();
+  sub.judge_between_stages = true;
+  auto orig_score = sub.reporter.ReportScoringResult;
+  sub.reporter.ReportScoringResult = [&](auto& sub, auto& res, int subtask,int stage){
+    orig_score(sub, res, subtask, stage);
+    ASSERT_EQ(res.td_results[subtask].score, 50'500'000);
+  };
+  long id = SetupSubmission(sub, 5, Compiler::GCC_CPP_17, kTime, true, R"(#include <cstdio>
+  int main(){})",
+      SpecjudgeType::SPECJUDGE_POLYGON, R"(#include <cstdio>
+      #include "testlib.h"
+      int main(int argc, char**argv){ registerTestlibCmd(argc, argv); puts("bcad"); quitf(_pc(101), "YOU good");})");
+    RunAndTeardownSubmission(id);
+}

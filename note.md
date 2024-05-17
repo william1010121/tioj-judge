@@ -43,6 +43,7 @@ the child process can send the output at `inpipe[1]` and receive the input at `o
 3. `SetupScoring` : for specail judge
 4. `SetupSummary`
 
+## `submission.cpp:246`:`SetupCompiling`
 
 ## `sumbmission.cpp:442`:`SetupScoring`
 
@@ -57,6 +58,7 @@ the child process can send the output at `inpipe[1]` and receive the input at `o
 
 ## `submission.cpp:261`:`FinalizeCompile`
 - set for compile the code
+- and also the compilerro information
 
 ## `submission.cpp:209`:`SetupCompile`
 - set up the env of the task
@@ -81,16 +83,16 @@ task,
 
 # need to change
 
-[yes] 1. `/usr/local/include/tioj/submission.h:19` -> add new`ENUM_SPECJUDGE_TYPE`
+[zj, polygon] 1. `/usr/local/include/tioj/submission.h:19` -> add new`ENUM_SPECJUDGE_TYPE`
 
-[yes] 2. `src/tioj/tasks.cpp:227` -> add new command sent into `sub.specjudge_type`
+[zj, polygon] 2. `src/tioj/tasks.cpp:227` -> add new command sent into `sub.specjudge_type`
     - sending `argv` into testlib
 
-[yes] 3. `src/tioj/submission.cpp:457` -> jump out when `TLE/MLE` depends on the specjudge type
+[zj, polygon] 3. `src/tioj/submission.cpp:457` -> jump out when `TLE/MLE` depends on the specjudge type
 
-[yes] 4. `src/tioj/submission.cpp:595` -> reading the return value of specjudge type
+[zj, polygon] 4. `src/tioj/submission.cpp:595` -> reading the return value of specjudge type
 
-[yes] 5. `src/tioj/submission.cpp:934` -> add the type of specjudge
+[zj, polygon] 5. `src/tioj/submission.cpp:934` -> add the type of specjudge
 
 
 # `tioj`
@@ -111,4 +113,7 @@ task,
 ## `app/helpers/problem_helper.rb:78` : `specjudge_type_desc_map`
 
 - 
+
+## `tasks.cpp:269` 
+- the special judge for error output
 

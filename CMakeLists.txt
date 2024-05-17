@@ -102,7 +102,7 @@ install(TARGETS sandbox-exec DESTINATION "${TIOJ_DATA_DIR}/")
 # headers for judge
 file(DOWNLOAD "https://raw.githubusercontent.com/nlohmann/json/v3.10.5/single_include/nlohmann/json.hpp"
   "${PROJECT_BINARY_DIR}/judge-headers/nlohmann/json.hpp")
-file(DOWNLOAD "https://raw.githubusercontent.com/MikeMirzayanov/testlib/6daa79fdc9c2b113be8d40f828e3dc81e67ce33d/testlib.h"
+file(DOWNLOAD "https://raw.githubusercontent.com/MikeMirzayanov/testlib/master/testlib.h"
   "${PROJECT_BINARY_DIR}/judge-headers/testlib.h")
 install(DIRECTORY "${PROJECT_BINARY_DIR}/judge-headers" DESTINATION "${TIOJ_DATA_DIR}")
 

@@ -525,42 +525,6 @@ void ReadOldSpecjudgeResult(const fs::path& output_path, bool last_stage, Submis
   }
 }
 
-void ReadZJSpecjudgeResult(const fs::path& output_path, SubmissionResult::TestdataResult& td_result) {
-  nlohmann::json json;
-  {
-    std::ifstream fin(output_path);
-    std::string line;
-    while(std::getline(fin, line)) {
-      if(line.find('=') == std::string::npos) /* skip the line without key=value*/ 
-        continue;
-
-      size_t pos = line.find('=');
-      std::string key = line.substr(0, pos);
-      std::string value = line.substr(pos + 1);
-      json[key] = value;
-    }
-  }
- if( json["$JUDGE_RESULT"] == "AC" ) {
-   td_result.verdict = Verdict::AC;
-   td_result.score = 100'000'000;
- } else {
-   td_result.verdict = Verdict::WA;
- }
- std::string msg="";
- bool has_message = false;
- for( auto it = json.begin(); it != json.end(); it++ ) {
-   if( it.key() == "$JUDGE_RESULT" ) continue;
-   has_message = true;
-    msg += it.key() + "=" + it.value().get<std::string>() + "\n";
- }
- if(!has_message) {
-   td_result.message_type = td_result.message = "";
- } else {
-   td_result.message_type = "text";
-   td_result.message = msg;
- }
-}
-
 void ReadNewSpecjudgeResult(const fs::path& output_path, SubmissionResult::TestdataResult& td_result) {
   nlohmann::json json;
   {
@@ -608,6 +572,98 @@ void ReadNewSpecjudgeResult(const fs::path& output_path, SubmissionResult::Testd
   if (!has_message) td_result.message_type = td_result.message = "";
 }
 
+void ReadZJSpecjudgeResult(const fs::path& output_path, SubmissionResult::TestdataResult& td_result) {
+  nlohmann::json json;
+  {
+    std::ifstream fin(output_path);
+    std::string line;
+    while(std::getline(fin, line)) {
+      if(line.find('=') == std::string::npos) /* skip the line without key=value*/ 
+        continue;
+
+      size_t pos = line.find('=');
+      std::string key = line.substr(0, pos);
+      std::string value = line.substr(pos + 1);
+      json[key] = value;
+    }
+  }
+ if( json["$JUDGE_RESULT"] == "AC" ) {
+   td_result.verdict = Verdict::AC;
+   td_result.score = 100'000'000;
+ } else {
+   td_result.verdict = Verdict::WA;
+ }
+ std::string msg="";
+ bool has_message = false;
+ for( auto it = json.begin(); it != json.end(); it++ ) {
+   if( it.key() == "$JUDGE_RESULT" ) continue;
+   has_message = true;
+    msg += it.key() + "=" + it.value().get<std::string>() + "\n";
+ }
+ if(!has_message) {
+   td_result.message_type = td_result.message = "";
+ } else {
+   td_result.message_type = "text";
+   td_result.message = msg;
+ }
+}
+
+void ReadPolygonSpecjudgeResult(const fs::path& output_path, const int status_code, SubmissionResult::TestdataResult& td_result) {
+  std::unordered_map<int,std::string> status_verdictAbr={
+    {0, "AC"},  // _ok(0) : Used to indicate that the solution is correct
+    {1, "WA"}, // _wa(1) : Used to indicate a wrong answer
+    {2, "WA"}, // _pe(2) : Used to indicate the presentation error
+    {3, "WA"}, // _fail(3) : Used to indicate a failure in the checker itself
+    {7, "WA"}, // _points(7) : Used to indicate that the solution is correct, but the score is not maximal
+    {8, "WA"}, // _unexpected(8) : Used to indicate unexpected input or output
+  };
+  static const std::regex kPartiallyRegex("partially correct \\((\\d+)\\)");
+  static const std::regex kPointsRegex("points (\\d+\\.\\d+|\\d+)");
+  bool is_partially_correct;
+  bool is_points;
+  std::string msg; 
+  {
+    std::fstream fin(output_path);
+    std::string line;
+    while(getline(fin, line)) {
+      msg += line + "\n";
+    }
+    is_partially_correct = std::regex_search(msg, kPartiallyRegex);
+    is_points = std::regex_search(msg, kPointsRegex);
+  }
+  if (!is_partially_correct && !is_points && 
+      status_verdictAbr.find(status_code) == status_verdictAbr.end()) {
+      td_result.verdict = Verdict::ER;
+      td_result.message = "Unknown status code: " + std::to_string(status_code);
+  }
+  else {
+    td_result.verdict = AbrToVerdict(status_verdictAbr[status_code], false);
+  }
+  auto ReadPoint = [&](std::string&str, bool is_pc) { 
+    // if is_pc is true, return the partially correct points , quitf(_pc(200),...);
+    // else return the points, quitp(1.2, ...)
+    const std::regex& re = is_pc ? kPartiallyRegex : kPointsRegex;
+    double score = 0;
+    try {
+      if(std::regex_search(str, re)) 
+        score = std::stod(std::regex_replace(str, re, "$1"));
+    } catch (...) {
+      spdlog::info("Error in ReadPoint return 0.0");
+      return (long)0;
+    }
+    return (is_pc ? NormalizeScore(score/2) : NormalizeScore(score));
+  };
+  if( td_result.verdict == Verdict::AC ) {
+    td_result.score = 100'000'000;
+  } else if ( td_result.verdict != Verdict::ER && ( is_points || is_partially_correct ) ) { /* for points*/
+    td_result.score = ReadPoint(msg, is_partially_correct);
+    td_result.verdict = td_result.score >= 100'000'000 ? Verdict::AC : Verdict::WA;
+  }  else {
+    td_result.score = 0;
+  }
+}
+
+
 void FinalizeScoring(SubmissionAndResult& sub_and_result, const TaskEntry& task,
                      const struct cjail_result& cjail_res, bool skipped) {
   const Submission& sub = sub_and_result.sub;
@@ -625,12 +681,21 @@ void FinalizeScoring(SubmissionAndResult& sub_and_result, const TaskEntry& task,
   td_result.score = 0;
   if (skipped) {
     // skipped because of TLE/MLE/etc in old-style; do nothing
-  } else if (!fs::is_regular_file(output_path) || cjail_res.info.si_status != 0) {
+  } else if (!fs::is_regular_file(output_path) ) {
     // skip remaining stages
     if (td_result.verdict == Verdict::NUL) td_result.verdict = Verdict::WA;
-  } else if (sub.specjudge_type == SpecjudgeType::SPECJUDGE_OLD) {
+  } else if(sub.specjudge_type == SpecjudgeType::SPECJUDGE_POLYGON) {
+    // SPECJUDGE_POLYGON will return non-zero status code
+    // polygon output will appear in error_path
+    output_path = ScoringBoxError(id, subtask, stage);
+    ReadPolygonSpecjudgeResult(output_path, cjail_res.info.si_status, td_result);
+  } else if( cjail_res.info.si_status != 0) {
+    // skip remaining stages
+    if (td_result.verdict == Verdict::NUL) td_result.verdict = Verdict::WA;
+  }
+  else if (sub.specjudge_type == SpecjudgeType::SPECJUDGE_OLD) {
     ReadOldSpecjudgeResult(output_path, last_stage, td_result);
-  } else if( sub.specjudge_type == SpecjudgeType::SPECJUDGE_ZJ) {
+  }  else if( sub.specjudge_type == SpecjudgeType::SPECJUDGE_ZJ) {
     ReadZJSpecjudgeResult(output_path, td_result);
   } else {
     try {
@@ -639,6 +704,8 @@ void FinalizeScoring(SubmissionAndResult& sub_and_result, const TaskEntry& task,
       // WA
     }
   }
+
+
   if (!last_stage && td_result.verdict != Verdict::NUL) {
     td_result.skip_stage = true;
   } else if (last_stage && td_result.verdict == Verdict::NUL) {
